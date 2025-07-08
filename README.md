@@ -55,6 +55,25 @@ These are examples of how you can use MCP Server to explore data without any hum
 
 ## 📦 Components
 
+### Transport Options
+The server supports multiple transport protocols:
+
+- **stdio** (default): Standard input/output communication, ideal for local development and MCP clients
+- **sse**: Server-Sent Events, useful for web-based clients
+- **websocket**: WebSocket transport for real-time communication
+
+You can specify the transport using the `--transport` parameter:
+```bash
+# Use stdio (default)
+mcp-server-ds
+
+# Use SSE transport
+mcp-server-ds --transport sse
+
+# Use WebSocket transport
+mcp-server-ds --transport websocket
+```
+
 ### Prompts
 - **explore-data**: Tailored for data exploration tasks
 
@@ -85,7 +104,9 @@ These are examples of how you can use MCP Server to explore data without any hum
       "--directory",
       "/Users/username/src/mcp-server-ds",
       "run",
-      "mcp-server-ds"
+      "mcp-server-ds",
+      "--transport",
+      "stdio"
     ]
   }
 }
@@ -97,7 +118,9 @@ These are examples of how you can use MCP Server to explore data without any hum
   "mcp-server-ds": {
     "command": "uvx",
     "args": [
-      "mcp-server-ds"
+      "mcp-server-ds",
+      "--transport",
+      "stdio"
     ]
   }
 }

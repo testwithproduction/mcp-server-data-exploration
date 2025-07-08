@@ -220,11 +220,29 @@ Please begin your analysis by loading the CSV file and providing an initial expl
 
 
 ### Main function
-async def main():
-    await app.run_async(transport="stdio")
+async def main(transport: str = "stdio"):
+    await app.run_async(transport=transport)
 
 
 if __name__ == "__main__":
     import asyncio
-
-    asyncio.run(main())
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="MCP Data Science Server")
+    parser.add_argument(
+        "--transport", 
+        type=str, 
+        default="stdio",
+        choices=["stdio", "sse", "websocket"],
+        help="Transport protocol to use (default: stdio)"
+    )
+    
+    args = parser.parse_args()
+    
+    try:
+        asyncio.run(main(transport=args.transport))
+    except KeyboardInterrupt:
+        print("\nServer stopped by user")
+    except Exception as e:
+        print(f"Error running server: {e}")
+        print("Note: This server is designed to be run through an MCP client, not directly.")
