@@ -12,8 +12,29 @@ import sklearn
 import statsmodels.api as sm
 from io import StringIO
 import sys
+import argparse
+import os
+import random
+import string
+from datetime import datetime
 
+# Ensure log directories exist
+LOG_DIR = os.path.join(os.path.dirname(__file__), "../../logs")
+SCRIPTS_DIR = os.path.join(LOG_DIR, "scripts")
+os.makedirs(SCRIPTS_DIR, exist_ok=True)
+
+# Set up logging to file and console
+log_file = os.path.join(LOG_DIR, "server.log")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    handlers=[
+        logging.FileHandler(log_file, encoding="utf-8"),
+        logging.StreamHandler(sys.stdout),
+    ],
+)
 logger = logging.getLogger(__name__)
+
 logger.info("Starting mini data science exploration server")
 
 
@@ -42,25 +63,36 @@ class ScriptRunner:
         try:
             self.data[df_name] = pd.read_csv(csv_path)
             self.notes.append(f"Successfully loaded CSV into dataframe '{df_name}'")
+            logger.info(f"Loaded CSV '{csv_path}' as dataframe '{df_name}'")
             return f"Successfully loaded CSV into dataframe '{df_name}'"
         except Exception as e:
+            logger.error(f"Error loading CSV: {e}")
             raise ValueError(f"Error loading CSV: {str(e)}")
 
     def run_script(
         self, script: str, save_to_memory: Optional[List[str]] = None
     ) -> str:
         """safely run a script, return the result if valid, otherwise return the error message"""
-        # first extract dataframes from the self.data
+        # Save script to logs/scripts/ with a random name
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        rand_suffix = "".join(
+            random.choices(string.ascii_lowercase + string.digits, k=6)
+        )
+        script_filename = f"script_{timestamp}_{rand_suffix}.py"
+        script_path = os.path.join(SCRIPTS_DIR, script_filename)
+        with open(script_path, "w", encoding="utf-8") as f:
+            f.write(script)
+        logger.info(f"Saved script to {script_path}")
+
         local_dict = {
             **{df_name: df for df_name, df in self.data.items()},
         }
-        # execute the script and return the result and if there is error, return the error message
+        stdout_capture = StringIO()
+        old_stdout = sys.stdout
         try:
-            stdout_capture = StringIO()
-            old_stdout = sys.stdout
             sys.stdout = stdout_capture
             self.notes.append(f"Running script: \n{script}")
-            # pylint: disable=exec-used
+            logger.debug(f"Running script: {script_filename}")
             exec(
                 script,
                 {
@@ -74,9 +106,11 @@ class ScriptRunner:
             )
             std_out_script = stdout_capture.getvalue()
         except Exception as e:
+            logger.error(f"Error running script {script_filename}: {e}")
             raise ValueError(f"Error running script: {str(e)}")
+        finally:
+            sys.stdout = old_stdout
 
-        # check if the result is a dataframe
         if save_to_memory:
             for df_name in save_to_memory:
                 self.notes.append(f"Saving dataframe '{df_name}' to memory")
@@ -84,6 +118,7 @@ class ScriptRunner:
 
         output = std_out_script if std_out_script else "No output"
         self.notes.append(f"Result: {output}")
+        logger.info(f"Script {script_filename} executed. Output length: {len(output)}")
         return f"Script executed successfully. Output: {output}"
 
     def get_notes(self) -> str:
@@ -220,29 +255,37 @@ Please begin your analysis by loading the CSV file and providing an initial expl
 
 
 ### Main function
-async def main(transport: str = "stdio"):
+async def main(transport: str = "stdio", debug: bool = False):
+    if debug:
+        logging.basicConfig(level=logging.DEBUG)
+        logger.debug("Debug logging enabled.")
+    else:
+        logging.basicConfig(level=logging.INFO)
+        logger.info("Info logging enabled.")
     await app.run_async(transport=transport)
 
 
 if __name__ == "__main__":
     import asyncio
-    import argparse
-    
+
     parser = argparse.ArgumentParser(description="MCP Data Science Server")
     parser.add_argument(
-        "--transport", 
-        type=str, 
+        "--transport",
+        type=str,
         default="stdio",
         choices=["stdio", "sse", "websocket"],
-        help="Transport protocol to use (default: stdio)"
+        help="Transport protocol to use (default: stdio)",
     )
-    
+    parser.add_argument(
+        "-d", "--debug", action="store_true", help="Enable debug logging"
+    )
     args = parser.parse_args()
-    
     try:
-        asyncio.run(main(transport=args.transport))
+        asyncio.run(main(transport=args.transport, debug=args.debug))
     except KeyboardInterrupt:
         print("\nServer stopped by user")
     except Exception as e:
         print(f"Error running server: {e}")
-        print("Note: This server is designed to be run through an MCP client, not directly.")
+        print(
+            "Note: This server is designed to be run through an MCP client, not directly."
+        )
