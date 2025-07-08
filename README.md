@@ -8,6 +8,8 @@ Your personal Data Scientist assistant, turning complex datasets into clear, act
 
 ## 🚀 Try it Out
 
+### With Claude Desktop
+
 1. **Download Claude Desktop**
    - Get it [here](https://claude.ai/download)
 
@@ -16,6 +18,7 @@ Your personal Data Scientist assistant, turning complex datasets into clear, act
    ```bash
    python setup.py
    ```
+   - On Windows, it might be easier to run this with uv under WSL and SSE transport
 
 3. **Load Templates and Tools**
    - Once the server is running, wait for the prompt template and tools to load in Claude Desktop.
@@ -25,6 +28,8 @@ Your personal Data Scientist assistant, turning complex datasets into clear, act
    - Begin your conversation by providing the required inputs:
      - `csv_path`: Local path to the CSV file
      - `topic`: The topic of exploration (e.g., "Weather patterns in New York" or "Housing prices in California")
+
+### TODO: support other AI tools like Cherry Studio.
 
 ## Examples
 
@@ -125,7 +130,17 @@ mcp-server-ds --transport websocket
   }
 }
 ```
-
+### Use SSE Transport
+```json
+{
+  "mcpServers": {
+    "mcp-server-ds": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://127.0.0.1:8000/sse"]
+    }
+  }
+}
+```
 ## 🛠️ Development
 
 ### Building and Publishing
