@@ -29,7 +29,16 @@ Your personal Data Scientist assistant, turning complex datasets into clear, act
      - `csv_path`: Local path to the CSV file
      - `topic`: The topic of exploration (e.g., "Weather patterns in New York" or "Housing prices in California")
 
-### TODO: support other AI tools like Cherry Studio.
+### With other AI tools like Cherry Studio
+
+1. Configure MCP per Cherry Studio instruction. Using SSE mode might be the easiest way, just add URL.
+```
+http://127.0.0.1:8000/sse
+```
+2. Run this MCP server with SSE transport
+3. Enable MCP tool when chatting in Cherry Studio.
+
+#### TODO: figure out how to prompt properly. Currently need to copy the whole prompt_template into Chat, which is not as simple as Claude Desktop.
 
 ## Examples
 
@@ -182,3 +191,8 @@ Questions? Feedback? Open an issue or reach out to the maintainers. Let's make t
 ## About
 
 This is an open source project run by [ReadingPlus.AI LLC](https://readingplus.ai). and open to contributions from the entire community.
+
+## Thoughts
+
+1. Claude is really good at generating proper code, Claude 4 generate ready-to-run code mostly in one shot. OpenAI and Deepseek code quality is so so.
+2. Claude desktop has a built in Analyze data feature, which does not rely on this MCP server at all.
